@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>国际算法 vs 国密算法 · 签章流程对比</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:"微软雅黑","PingFang SC",Arial,sans-serif;
+  background:#EEF2F8;color:#1C2B3A;
+  padding:36px 36px 60px;min-width:1000px;
+}
+
+/* ── 标题 ── */
+.page-title{text-align:center;margin-bottom:30px}
+.page-title h1{font-size:20px;font-weight:700;color:#1A3A6B;letter-spacing:1.5px;margin-bottom:6px}
+.page-title p{font-size:11.5px;color:#7F8C8D;background:#fff;display:inline-block;padding:4px 18px;border-radius:20px;border:1px solid #DDE3EE}
+
+/* ── 主体说明条 ── */
+.actor-bar{
+  display:flex;gap:8px;margin-bottom:20px;
+  background:#fff;border-radius:12px;padding:14px 18px;
+  box-shadow:0 2px 8px rgba(0,0,0,.06);
+}
+.actor-pill{
+  display:flex;align-items:center;gap:6px;
+  background:#F4F7FB;border-radius:20px;padding:5px 12px;
+  font-size:11px;flex:1;border:1.5px solid #E0E8F4;
+}
+.actor-pill .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.actor-pill .name{font-weight:700;margin-right:2px}
+.actor-pill .desc{color:#7F8C8D;font-size:10px}
+.d-user{background:#3498DB}.d-fe{background:#27AE60}
+.d-ctrl{background:#8E44AD}.d-os{background:#E67E22}
+.d-hw{background:#2E5FA3}.d-be{background:#C0392B}
+
+/* ── 图例 ── */
+.legend{
+  display:flex;align-items:center;gap:16px;font-size:11px;color:#555;
+  background:#fff;border-radius:8px;padding:8px 16px;margin-bottom:16px;
+  box-shadow:0 1px 5px rgba(0,0,0,.05);width:fit-content;
+}
+.leg{display:flex;align-items:center;gap:5px}
+.leg-box{width:14px;height:14px;border-radius:3px}
+.lb-common{background:#2E5FA3}.lb-csp{background:#F39C12}
+.lb-backend{background:#95A5A6}.lb-sign{background:#8E44AD}
+
+/* ══ 双栏对比 ══ */
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+
+.panel{
+  background:#fff;border-radius:14px;
+  box-shadow:0 2px 14px rgba(0,0,0,.08);
+  overflow:hidden;
+}
+
+/* panel header */
+.p-head{padding:14px 20px 12px}
+.panel.rsa .p-head{background:linear-gradient(135deg,#1E8449,#27AE60)}
+.panel.sm2 .p-head{background:linear-gradient(135deg,#1A3A6B,#2E5FA3)}
+.p-head h2{font-size:14px;font-weight:700;color:#fff;margin-bottom:3px}
+.p-head .p-sub{font-size:11px;color:rgba(255,255,255,.8)}
+.p-head .p-tag{
+  display:inline-block;margin-top:6px;font-size:10px;font-weight:700;
+  background:rgba(255,255,255,.2);color:#fff;
+  padding:2px 10px;border-radius:10px;
+}
+
+/* phase header */
+.phase-head{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 16px;font-size:11px;font-weight:700;
+  border-top:1px solid #ECF0F1;border-bottom:1px solid #ECF0F1;
+}
+.phase-head .ph-icon{font-size:14px}
+.ph-bind{background:#F0F9F4;color:#1A6635}
+.ph-sign{background:#EEF2FF;color:#2C3E8A}
+
+/* step body */
+.steps{padding:8px 14px 14px}
+
+/* ── step card ── */
+.step{
+  display:flex;gap:9px;align-items:flex-start;
+  padding:7px 8px;border-radius:8px;margin-bottom:3px;
+  position:relative;
+}
+/* connector line */
+.step+.step::before{
+  content:"";position:absolute;left:18px;top:-4px;
+  width:2px;height:5px;background:#DCE4EF;border-radius:1px;
+}
+.step.csp-step+.step::before,.step+.step.csp-step::before{display:none}
+
+.step.common{background:#F7F9FC}
+.step.csp-step{
+  background:#FFFBF2;
+  border-left:3px solid #F39C12;
+  margin:5px 0;padding:8px 8px 8px 10px;
+}
+.step.backend{background:#F9FAFB}
+.step.sign-key{
+  background:#F5F0FF;
+  border-left:3px solid #8E44AD;
+  margin:5px 0;padding:8px 8px 8px 10px;
+}
+
+/* step number */
+.sn{
+  width:20px;height:20px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;color:#fff;margin-top:1px;
+}
+.sn.blue{background:#2E5FA3}
+.sn.orange{background:#F39C12}
+.sn.gray{background:#95A5A6}
+.sn.purple{background:#8E44AD}
+
+/* actors in step */
+.sa{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:3px}
+.tag{
+  font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;
+}
+.t-user{background:#D6EAF8;color:#1A5276}
+.t-fe  {background:#D5F5E3;color:#1A6635}
+.t-ctrl{background:#E8DAEF;color:#5B2C6F}
+.t-os  {background:#FDEBD0;color:#784212}
+.t-hw  {background:#D6E4F5;color:#1A3A6B}
+.t-be  {background:#FADBD8;color:#7B241C}
+.t-csp {background:#FEF9E7;color:#7D6608;border:1px solid #F8C471}
+.arrow{font-size:11px;color:#BDC3C7}
+
+/* step text */
+.sd{font-size:11px;color:#2C3E50;line-height:1.6}
+.sd b{color:#1A3A6B}
+.sd .em{color:#B35B00;font-weight:700}
+
+/* badges */
+.badge{
+  display:inline-block;font-size:9px;font-weight:700;
+  padding:1px 6px;border-radius:3px;margin-left:4px;vertical-align:middle;
+}
+.b-csp{background:#FEF3CD;color:#7D4E00;border:1px solid #F8C471}
+.b-key{background:#EDE0FF;color:#5B2C6F;border:1px solid #C5AEEF}
+
+/* ── 结论对比 ── */
+.insight{
+  display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:20px;
+}
+.ins-card{
+  border-radius:12px;padding:16px 18px;font-size:12px;line-height:1.8;
+}
+.ins-card.green{background:#EAF7EF;border:1.5px solid #82CFA0;color:#1A4A28}
+.ins-card.blue {background:#EBF3FF;border:1.5px solid #90B8F0;color:#1A2F6B}
+.ins-card h4{font-size:13px;font-weight:700;margin-bottom:8px}
+.ins-card.green h4{color:#1A6635}
+.ins-card.blue  h4{color:#1A3A6B}
+.highlight{
+  background:rgba(243,156,18,.15);border-radius:4px;
+  padding:1px 5px;font-weight:700;color:#7D4E00;
+}
+
+/* ── CSP介入点注释 ── */
+.csp-note{
+  margin-top:10px;
+  background:#FFF8EC;border:1.5px solid #F8C471;border-radius:8px;
+  padding:10px 14px;font-size:11px;color:#7D4E00;line-height:1.7;
+}
+.csp-note b{color:#B35B00}
+
+/* ── 总结 ── */
+.summary{
+  margin-top:20px;
+  background:linear-gradient(135deg,#1A3A6B 0%,#2E5FA3 100%);
+  border-radius:12px;padding:16px 24px;color:#fff;
+  font-size:12.5px;line-height:1.9;
+}
+.summary strong{color:#FFD166}
+
+.footer{text-align:center;font-size:10px;color:#A0ABBC;margin-top:32px}
+</style>
+</head>
+<body>
+
+<!-- ══ 标题 ══ -->
+<div class="page-title">
+  <h1>国际算法（RSA）vs 国密算法（SM2）· 完整签章流程对比</h1>
+  <p>说明 CSP 的作用机制 · 面向管理层 · 云信国密签章专项 · 产品部 2026年3月</p>
+</div>
+
+<!-- ══ 主体说明条 ══ -->
+<div class="actor-bar">
+  <div class="actor-pill"><div class="dot d-user"></div><span class="name">用户</span><span class="desc">发起操作的人</span></div>
+  <div class="actor-pill"><div class="dot d-fe"></div><span class="name">云链前端</span><span class="desc">平台网页，流程调度中心</span></div>
+  <div class="actor-pill"><div class="dot d-ctrl"></div><span class="name">CFCA控件</span><span class="desc">签章插件，桥接前端与系统</span></div>
+  <div class="actor-pill"><div class="dot d-os"></div><span class="name">操作系统</span><span class="desc">Windows，管理硬件调用</span></div>
+  <div class="actor-pill" style="background:#FEF9E7;border-color:#F8C471"><div class="dot" style="background:#F39C12"></div><span class="name" style="color:#7D4E00">CSP驱动</span><span class="desc">国密专属·厂商适配层</span></div>
+  <div class="actor-pill"><div class="dot d-hw"></div><span class="name">UKey硬件</span><span class="desc">执行加密运算的物理设备</span></div>
+  <div class="actor-pill"><div class="dot d-be"></div><span class="name">云链后端</span><span class="desc">服务器，负责校验与存储</span></div>
+</div>
+
+<!-- ══ 图例 ══ -->
+<div class="legend">
+  <div class="leg"><div class="leg-box lb-common"></div>通用步骤</div>
+  <div class="leg"><div class="leg-box lb-csp"></div><b style="color:#B35B00">国密专属·CSP步骤</b></div>
+  <div class="leg"><div class="leg-box lb-sign"></div><b style="color:#5B2C6F">核心签名步骤</b></div>
+  <div class="leg"><div class="leg-box lb-backend"></div>后端处理步骤</div>
+  &nbsp;|&nbsp; 🔶 = CSP 介入点 &nbsp;|&nbsp; 橙色竖线 = 国密新增环节
+</div>
+
+<!-- ══ 双栏对比 ══ -->
+<div class="compare">
+
+  <!-- ══ 左：RSA ══ -->
+  <div class="panel rsa">
+    <div class="p-head">
+      <h2>✅ 国际算法（RSA）— 现有流程</h2>
+      <div class="p-sub">一代UKey · RSA证书 · Windows内置支持</div>
+      <div class="p-tag">共 7 步 · 无需CSP配置 · 全程顺滑</div>
+    </div>
+
+    <!-- 绑定阶段 -->
+    <div class="phase-head ph-bind">
+      <span class="ph-icon">🔗</span> 第一阶段：UKey 绑定
+    </div>
+    <div class="steps">
+
+      <div class="step common">
+        <div class="sn blue">1</div>
+        <div>
+          <div class="sa">
+            <span class="tag t-user">用户</span><span class="arrow">→</span><span class="tag t-fe">云链前端</span>
+          </div>
+          <div class="sd">插入UKey，点击绑定按钮</div>
+        </div>
+      </div>
+
+      <div class="step common">
+        <div class="sn blue">2</div>
+        <div>
+          <div class="sa">
+            <span class="tag t-fe">云链前端</span><span class="arrow">→</span><span class="tag t-ctrl">CFCA控件</span><span class="arrow">→</span><span class="tag t-os">操作系统</span><span class="arrow">⇄</span><span class="tag t-hw">UKey硬件</span>
+          </div>
+          <div class="sd">前端调用控件，系统<b>直接识别RSA UKey</b>，读取证书信息并逐层返回</div>
+        </div>
+      </div>
+
+      <div class="step backend">
+        <div class="sn gray">3</div>
+        <div>
+          <div class="sa">
+            <span class="tag t-fe">云链前端</span><span class="arrow">→</span><span class="tag t-be">云链后端</span>
+          </div>
+          <div class="sd">提交证书信息 → 后端校验企业名称、有效期、验签 → <b>绑定完成</b></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 签名阶段 -->
+    <div class="phase-head ph-sign">
+      <span class="ph-icon">✍️</span> 第二阶段：文件签名（核心）
+    </div>
+    <div class="steps">
+
+      <div class="step common">
+        <div class="sn blue">4</div>
+        <div>
+          <div class="sa">
+            <span class="tag t-user">用户</span><span class="arrow">→</span><span class="tag t-fe">云链前端</span>
+          </div>
+          <div class="sd">在融资文件上点击"签名"</div>
+        </div>
+      </div>
+
+      <div class="step common">
+        <div class="sn blue">5</div>
+        <div>
+          <div class="sa">
+            <span class="tag t-fe">云链前端</span><span class="arrow">→</span><span class="tag t-ctrl">CFCA控件</span>
+          </div>
+          <div class="sd">将文件哈希值传给控件，发起签名请求</div>
+        </div>
+      </div>
+
+      <div class="step sign-key">
+        <div class="sn purple">6</div>
+        <div>
+          <div class="sa">
+            <span class="tag t-ctrl">CFCA控件</span><span class="arrow">→</span><span class="tag t-os">操作系统</span><span class="arrow">→</span><span class="tag t-hw">UKey硬件</span>
+            <span class="badge b-key">关键步骤</span>
+          </div>
+          <div class="sd">操作系统通过内置RSA接口，<b>直接驱动UKey芯片</b>执行私钥签名运算，返回签名值</div>
+        </div>
+      </div>
+
+      <div class="step backend">
+        <div class="sn gray">7</div>
+        <div>
+          <div class="sa">
+            <span class="tag t-fe">云链前端</span><span class="arrow">→</span><span class="tag t-be">云链后端</span>
+          </div>
+          <div class="sd">提交签名结果 → 后端验签通过 → <b>文件签署完成</b></div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /rsa panel -->
+
+
+  <!-- ══ 右：SM2 ══ -->
+  <div class="panel sm2">
+    <div class="p-head">
+      <h2>🔷 国密算法（SM2）— 本次新增流程</h2>
+      <div class="p-sub">二代UKey · 国密证书 · Windows不原生支持</div>
+      <div class="p-tag">共 10 步 · 橙色为CSP新增环节（用户无感知）</div>
+    </div>
+
+    <!-- 绑定阶段 -->
+    <div class="phase-head ph-bind">
+      <span class="ph-icon">🔗</span> 第一阶段：UKey 绑定&nbsp;
+      <span style="font-size:10px;color:#B35B00;background:#FEF3CD;padding:1px 7px;border-radius:8px;margin-left:4px">🔶 CSP介入点①</span>
+    </div>
+    <div class="steps">
+
+      <div class="step common">
+        <div class="sn blue">1</div>
+        <div>
+          <div class="sa">
+            <span class="tag t-user">用户</span><span class="arrow">→</span><span class="tag t-fe">云链前端</span>
+          </div>
+          <div class="sd">插入UKey，点击绑定按钮（用户操作与RSA完全相同）</div>
+        </div>
+      </div>
+
+      <div class="step csp-step">
+        <div class="sn orange">2</div>
+        <div>
+          <div class="sa">
+            <span class="tag t-fe">云链前端</span><span class="arrow">→</span><span class="tag t-be">云链后端</span>
+            <span class="badge b-csp">国密专属</span>
+          </div>
+          <div class="sd"><span class="em">前端先向后端拉取该银行的CSP名单</span>（后台统一维护各银行UKey驱动配置）</div>
+        </div>
+      </div>
+
+      <div class="step csp-step">
+        <div class="sn orange">3</div>
+        <div>
+          <div class="sa">
+            <span class="tag t-fe">云链前端</span><span class="arrow">→</span><span class="tag t-ctrl">CFCA控件</span><span class="arrow">→</span><span class="tag t-os">操作系统</span><span class="arrow">+</span><span class="tag t-csp">🧩 CSP驱动</span>
+            <span class="badge b-csp">国密专属</span>
+          </div>
+          <div class="sd"><span class="em">控件将CSP驱动注册进操作系统</span>——相当于给Windows安装"国密翻译插件"，系统才能识别SM2 UKey</div>
+        </div>
+      </div>
+
+      <div class="step common">
+        <div class="sn blue">4</div>
+        <div>
+          <div class="sa">
+            <span class="tag t-ctrl">CFCA控件</span><span class="arrow">→</span><span class="tag t-os">操作系统</span><span class="arrow">⇄</span><span class="tag t-hw">UKey硬件</span>
+          </div>
+          <div class="sd">系统<b>经由CSP驱动</b>与国密UKey通信，读取SM2证书信息并逐层返回</div>
+        </div>
+      </div>
+
+      <div class="step backend">
+        <div class="sn gray">5</div>
+        <div>
+          <div class="sa">
+            <span class="tag t-fe">云链前端</span><span class="arrow">→</span><span class="tag t-be">云链后端</span>
+          </div>
+          <div class="sd">提交证书信息 → 后端校验企业名称、有效期、验签 → <b>绑定完成</b></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 签名阶段 -->
+    <div class="phase-head ph-sign">
+      <span class="ph-icon">✍️</span> 第二阶段：文件签名（核心）&nbsp;
+      <span style="font-size:10px;color:#B35B00;background:#FEF3CD;padding:1px 7px;border-radius:8px;margin-left:4px">🔶 CSP介入点②</span>
+    </div>
+    <div class="steps">
+
+      <div class="step common">
+        <div class="sn blue">6</div>
+        <div>
+          <div class="sa">
+            <span class="tag t-user">用户</span><span class="arrow">→</span><span class="tag t-fe">云链前端</span>
+          </div>
+          <div class="sd">在融资文件上点击"签名"（用户操作与RSA完全相同）</div>
+        </div>
+      </div>
+
+      <div class="step common">
+        <div class="sn blue">7</div>
+        <div>
+          <div class="sa">
+            <span class="tag t-fe">云链前端</span><span class="arrow">→</span><span class="tag t-ctrl">CFCA控件</span>
+          </div>
+          <div class="sd">将文件哈希值传给控件，<b>同时传入国密算法标识</b>，发起签名请求</div>
+        </div>
+      </div>
+
+      <div class="step csp-step">
+        <div class="sn orange">8</div>
+        <div>
+          <div class="sa">
+            <span class="tag t-ctrl">CFCA控件</span><span class="arrow">→</span><span class="tag t-os">操作系统</span><span class="arrow">→</span><span class="tag t-csp">🧩 CSP驱动</span>
+            <span class="badge b-csp">国密专属</span>
+          </div>
+          <div class="sd"><span class="em">操作系统通过CSP驱动转发签名指令</span>——CSP将Windows标准调用"翻译"成SM2芯片能理解的指令</div>
+        </div>
+      </div>
+
+      <div class="step sign-key">
+        <div class="sn purple">9</div>
+        <div>
+          <div class="sa">
+            <span class="tag t-csp">🧩 CSP驱动</span><span class="arrow">→</span><span class="tag t-hw">UKey硬件</span>
+            <span class="badge b-key">关键步骤</span>
+          </div>
+          <div class="sd">CSP驱动SM2芯片<b>执行国密私钥签名运算</b>，返回SM2签名值（UKey硬件完成最核心的加密动作）</div>
+        </div>
+      </div>
+
+      <div class="step backend">
+        <div class="sn gray">10</div>
+        <div>
+          <div class="sa">
+            <span class="tag t-fe">云链前端</span><span class="arrow">→</span><span class="tag t-be">云链后端</span>
+          </div>
+          <div class="sd">提交签名结果 → 后端以国密算法验签通过 → <b>文件签署完成</b></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="csp-note" style="margin:0 14px 14px">
+      <b>🔶 CSP 两次介入的作用：</b>
+      ①绑定时：让操作系统"认识"这个UKey（否则证书列表为空，绑定失败）；
+      ②签名时：将签名指令"翻译"给SM2芯片（否则芯片听不懂，签名无法执行）。
+      <b>两步均在后台自动完成，用户无感知。</b>
+    </div>
+
+  </div><!-- /sm2 panel -->
+</div><!-- /compare -->
+
+
+<!-- ══ 核心结论 ══ -->
+<div class="insight">
+  <div class="ins-card green">
+    <h4>✅ 为什么 RSA 不需要 CSP？</h4>
+    微软将 RSA、SHA 等国际算法<b>内置在 Windows 系统中</b>，操作系统天然"认识"RSA UKey，也天然知道怎么让它签名。整个流程就像<b>插U盘不需要装驱动</b>——系统即插即用，云链前端直接调控件就够了。
+  </div>
+  <div class="ins-card blue">
+    <h4>🔷 为什么 SM2 必须有 CSP？</h4>
+    SM2 是中国国家密码标准，<b>微软不内置</b>。每家银行UKey厂商各自实现了SM2驱动（即CSP），必须先把这个"翻译插件"告知系统，系统才能在绑定时<span class="highlight">找到UKey</span>，在签名时<span class="highlight">驱动它签名</span>。CSP 缺失则两个环节都会中断。维护成本体现在：需要为每家合作银行维护一份CSP名单，新增银行时约需1小时配置工作，<b>无需前端发版，后台实时生效</b>。
+  </div>
+</div>
+
+<!-- ══ 总结 ══ -->
+<div class="summary">
+  <b>一句话结论：</b>
+  国际算法（RSA）因 Windows 原生支持而<strong>零配置</strong>；国密算法（SM2）因属于中国特有标准、系统不内置，需要在<strong>绑定</strong>和<strong>签名</strong>两个关键节点通过 CSP 驱动"搭桥"，才能让系统识别并驱动国密 UKey。这是底层技术标准差异决定的，并非平台设计复杂化。通过后端集中维护 CSP 名单，维护成本可控，且对现有国标业务<strong>完全无影响</strong>。
+</div>
+
+<div class="footer">云信国密签章专项 · 产品部 · 2026年3月 · 仅供内部使用</div>
+</body>
+</html>
