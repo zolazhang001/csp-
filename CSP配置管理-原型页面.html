@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>CSP 配置管理 · 云链后台</title>
+<style>
+/* ── Reset & Base ── */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"微软雅黑","PingFang SC",Arial,sans-serif;background:#F0F2F5;color:#1C2B3A;font-size:13px;display:flex;min-height:100vh}
+
+/* ── 侧边栏 ── */
+.sidebar{width:200px;background:#001529;flex-shrink:0;display:flex;flex-direction:column}
+.logo{padding:18px 20px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.logo-title{color:#fff;font-size:15px;font-weight:700;letter-spacing:.5px}
+.logo-sub{color:rgba(255,255,255,.45);font-size:10px;margin-top:2px}
+.nav{padding:12px 0;flex:1}
+.nav-group-title{color:rgba(255,255,255,.35);font-size:10px;padding:8px 20px 4px;letter-spacing:1px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:9px 20px;color:rgba(255,255,255,.65);cursor:pointer;font-size:12.5px;transition:.15s}
+.nav-item:hover{color:#fff;background:rgba(255,255,255,.05)}
+.nav-item.active{color:#fff;background:#2E5FA3;border-right:3px solid #4D9CF0}
+.nav-item .nav-icon{font-size:14px;width:16px;text-align:center}
+
+/* ── 主区域 ── */
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+
+/* 顶栏 */
+.topbar{background:#fff;border-bottom:1px solid #E8ECF2;padding:0 28px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:12px;color:#95A5A6}
+.breadcrumb span{color:#1C2B3A;font-weight:600}
+.topbar-right{display:flex;align-items:center;gap:14px;font-size:12px;color:#555}
+.avatar{width:28px;height:28px;background:#2E5FA3;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+
+/* 内容区 */
+.content{padding:24px 28px;flex:1;overflow-y:auto}
+
+/* ── 页面标题行 ── */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
+.page-title-block h1{font-size:18px;font-weight:700;color:#1A3A6B;margin-bottom:4px}
+.page-title-block p{font-size:12px;color:#7F8C8D;line-height:1.6}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:600;cursor:pointer;border:none;transition:.15s}
+.btn-primary{background:#2E5FA3;color:#fff}
+.btn-primary:hover{background:#1A3A6B}
+.btn-default{background:#fff;color:#555;border:1px solid #D1D9E6}
+.btn-default:hover{border-color:#2E5FA3;color:#2E5FA3}
+.btn-sm{padding:4px 10px;font-size:11.5px;border-radius:4px}
+.btn-danger-ghost{background:transparent;color:#C0392B;border:1px solid #ECC;font-size:11.5px;padding:3px 9px;border-radius:4px;cursor:pointer}
+.btn-danger-ghost:hover{background:#FFF0F0}
+
+/* ── 统计卡片 ── */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat-card{background:#fff;border-radius:10px;padding:16px 18px;box-shadow:0 1px 6px rgba(0,0,0,.06);border-left:4px solid transparent}
+.stat-card.blue{border-left-color:#2E5FA3}
+.stat-card.green{border-left-color:#27AE60}
+.stat-card.orange{border-left-color:#F39C12}
+.stat-card.gray{border-left-color:#95A5A6}
+.stat-label{font-size:11px;color:#7F8C8D;margin-bottom:6px}
+.stat-val{font-size:24px;font-weight:700;color:#1A3A6B}
+.stat-sub{font-size:10px;color:#B0B8C4;margin-top:3px}
+
+/* ── 工具栏 ── */
+.toolbar{background:#fff;border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 5px rgba(0,0,0,.05);flex-wrap:wrap}
+.search-box{display:flex;align-items:center;background:#F4F6F9;border:1px solid #E0E6EF;border-radius:6px;padding:6px 10px;gap:6px;flex:1;max-width:320px}
+.search-box input{border:none;background:transparent;outline:none;font-size:12.5px;width:100%;color:#1C2B3A}
+.select-filter{border:1px solid #D1D9E6;border-radius:6px;padding:6px 10px;font-size:12.5px;color:#1C2B3A;background:#fff;outline:none;cursor:pointer}
+.toolbar-right{margin-left:auto;display:flex;gap:8px}
+
+/* ── 提示条 ── */
+.tip-bar{background:#FFF8EC;border:1px solid #F8C471;border-radius:8px;padding:10px 16px;margin-bottom:16px;font-size:12px;color:#7D4E00;display:flex;align-items:center;gap:8px}
+
+/* ── 银行分组卡片 ── */
+.bank-group{background:#fff;border-radius:10px;margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,.06);overflow:hidden}
+.bank-header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid #F0F3F8;cursor:pointer;background:#FAFBFE;user-select:none}
+.bank-header:hover{background:#F4F7FF}
+.bank-header-left{display:flex;align-items:center;gap:10px}
+.bank-badge{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.bank-name{font-size:13.5px;font-weight:700;color:#1A3A6B}
+.bank-meta{font-size:11px;color:#7F8C8D;margin-top:1px}
+.bank-header-right{display:flex;align-items:center;gap:10px}
+.count-badge{background:#EBF0F8;color:#2E5FA3;font-size:10.5px;font-weight:700;padding:2px 10px;border-radius:10px}
+.count-badge.warn{background:#FEF3CD;color:#7D4E00}
+.expand-arrow{color:#95A5A6;font-size:11px;transition:.2s}
+.expand-arrow.open{transform:rotate(180deg)}
+
+/* ── CSP 表格 ── */
+.csp-table{width:100%;border-collapse:collapse}
+.csp-table th{background:#F7F9FC;color:#7F8C8D;font-size:11px;font-weight:600;padding:9px 16px;text-align:left;border-bottom:1px solid #E8ECF2;white-space:nowrap}
+.csp-table td{padding:11px 16px;border-bottom:1px solid #F0F3F8;font-size:12.5px;vertical-align:middle}
+.csp-table tr:last-child td{border-bottom:none}
+.csp-table tbody tr:hover td{background:#FAFCFF}
+
+.csp-name-cell{display:flex;align-items:center;gap:8px}
+.csp-code{font-family:"Courier New",monospace;font-size:11.5px;background:#F4F6F9;padding:3px 8px;border-radius:4px;color:#1A3A6B;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.copy-btn{background:none;border:none;cursor:pointer;color:#B0B8C4;font-size:12px;padding:2px 4px;border-radius:3px}
+.copy-btn:hover{color:#2E5FA3;background:#EBF0F8}
+
+.status-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:10px;font-size:10.5px;font-weight:600}
+.status-tag::before{content:"";width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.tag-on{background:#D5F5E3;color:#1A6635}.tag-on::before{background:#27AE60}
+.tag-off{background:#F2F3F4;color:#7F8C8D}.tag-off::before{background:#BDC3C7}
+
+.ukey-brand{font-size:11.5px;color:#5D6D7E;background:#EEF1F5;padding:2px 8px;border-radius:4px;display:inline-block}
+
+.action-cell{display:flex;align-items:center;gap:6px}
+.link-btn{background:none;border:none;cursor:pointer;font-size:12px;color:#2E5FA3;padding:3px 6px;border-radius:4px}
+.link-btn:hover{background:#EBF0F8}
+.link-btn.red{color:#C0392B}
+.link-btn.red:hover{background:#FFF0F0}
+.divider-v{width:1px;height:12px;background:#E0E6EF}
+
+/* 空行提示 */
+.empty-tip{text-align:center;padding:24px;color:#B0B8C4;font-size:12px}
+
+/* 底部添加行 */
+.add-row-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;border-top:1px dashed #D6E4F5;background:#F8FBFF}
+.add-row-bar button{background:none;border:none;cursor:pointer;color:#2E5FA3;font-size:12px;font-weight:600;display:flex;align-items:center;gap:4px}
+.add-row-bar button:hover{color:#1A3A6B}
+
+/* ══ Modal ══ */
+.modal-mask{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center}
+.modal-mask.show{display:flex}
+.modal{background:#fff;border-radius:12px;width:520px;max-width:96vw;box-shadow:0 8px 40px rgba(0,0,0,.18);overflow:hidden}
+.modal-head{padding:18px 24px;border-bottom:1px solid #EEF0F5;display:flex;align-items:center;justify-content:space-between}
+.modal-head h3{font-size:15px;font-weight:700;color:#1A3A6B}
+.modal-close{background:none;border:none;font-size:18px;color:#95A5A6;cursor:pointer;line-height:1;padding:2px 6px;border-radius:4px}
+.modal-close:hover{background:#F0F3F8;color:#555}
+.modal-body{padding:22px 24px}
+.form-row{margin-bottom:18px}
+.form-label{font-size:12px;font-weight:600;color:#3D4E5C;margin-bottom:6px;display:flex;align-items:center;gap:4px}
+.form-label .req{color:#C0392B}
+.form-label .tip{font-weight:400;color:#95A5A6;font-size:11px}
+.form-input{width:100%;border:1px solid #D1D9E6;border-radius:6px;padding:8px 12px;font-size:13px;color:#1C2B3A;outline:none;transition:.15s;font-family:inherit}
+.form-input:focus{border-color:#2E5FA3;box-shadow:0 0 0 3px rgba(46,95,163,.1)}
+.form-select{width:100%;border:1px solid #D1D9E6;border-radius:6px;padding:8px 12px;font-size:13px;color:#1C2B3A;outline:none;background:#fff;cursor:pointer}
+.form-hint{font-size:11px;color:#95A5A6;margin-top:5px;line-height:1.5}
+.form-hint code{font-family:"Courier New",monospace;background:#F4F6F9;padding:1px 5px;border-radius:3px;color:#2E5FA3}
+.modal-foot{padding:14px 24px;border-top:1px solid #EEF0F5;display:flex;justify-content:flex-end;gap:10px;background:#FAFBFE}
+
+/* ── 操作确认小弹窗 ── */
+.confirm-mask{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1100;align-items:center;justify-content:center}
+.confirm-mask.show{display:flex}
+.confirm-box{background:#fff;border-radius:10px;width:360px;padding:24px;box-shadow:0 6px 30px rgba(0,0,0,.15)}
+.confirm-box h4{font-size:14px;font-weight:700;color:#1A3A6B;margin-bottom:8px}
+.confirm-box p{font-size:12.5px;color:#555;line-height:1.7;margin-bottom:18px}
+.confirm-box .row{display:flex;gap:10px;justify-content:flex-end}
+
+/* ── 导入弹窗 ── */
+.upload-zone{border:2px dashed #C5D5E8;border-radius:8px;padding:28px;text-align:center;cursor:pointer;transition:.15s;margin-bottom:14px}
+.upload-zone:hover{border-color:#2E5FA3;background:#F0F5FF}
+.upload-zone p{font-size:12.5px;color:#7F8C8D;margin-top:8px}
+.upload-zone .icon{font-size:32px}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1A3A6B;color:#fff;padding:10px 22px;border-radius:24px;font-size:12.5px;font-weight:600;z-index:2000;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+
+/* 折叠动画 */
+.collapse-body{transition:max-height .25s ease;overflow:hidden}
+</style>
+</head>
+<body>
+
+<!-- ══ 侧边栏 ══ -->
+<div class="sidebar">
+  <div class="logo">
+    <div class="logo-title">☁ 云链后台</div>
+    <div class="logo-sub">运营管理平台</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-group-title">业务管理</div>
+    <div class="nav-item"><span class="nav-icon">📋</span>企业管理</div>
+    <div class="nav-item"><span class="nav-icon">🔐</span>UKey 管理</div>
+    <div class="nav-item"><span class="nav-icon">📄</span>签章记录</div>
+
+    <div class="nav-group-title" style="margin-top:8px">系统配置</div>
+    <div class="nav-item active"><span class="nav-icon">🧩</span>CSP 配置管理</div>
+    <div class="nav-item"><span class="nav-icon">🏦</span>银行管理</div>
+    <div class="nav-item"><span class="nav-icon">⏱</span>时间戳服务</div>
+
+    <div class="nav-group-title" style="margin-top:8px">系统</div>
+    <div class="nav-item"><span class="nav-icon">📊</span>操作日志</div>
+    <div class="nav-item"><span class="nav-icon">⚙️</span>系统设置</div>
+  </nav>
+</div>
+
+<!-- ══ 主区域 ══ -->
+<div class="main">
+
+  <!-- 顶栏 -->
+  <div class="topbar">
+    <div class="breadcrumb">系统配置 › <span>CSP 配置管理</span></div>
+    <div class="topbar-right">
+      <span>🔔</span>
+      <span>运维专员</span>
+      <div class="avatar">运</div>
+    </div>
+  </div>
+
+  <!-- 内容 -->
+  <div class="content">
+
+    <!-- 页面标题 -->
+    <div class="page-header">
+      <div class="page-title-block">
+        <h1>CSP 配置管理</h1>
+        <p>维护各合作银行 UKey 对应的国密 CSP 驱动名单，供前端签章时按需加载。配置实时生效，无需发版。</p>
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <button class="btn btn-default" onclick="showImport()">📥 批量导入</button>
+        <button class="btn btn-primary" onclick="showAddModal()">＋ 新增 CSP 配置</button>
+      </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="stat-row">
+      <div class="stat-card blue">
+        <div class="stat-label">接入银行数</div>
+        <div class="stat-val">3</div>
+        <div class="stat-sub">已接入国密银行</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">CSP 条目总数</div>
+        <div class="stat-val">11</div>
+        <div class="stat-sub">启用中 10 条 / 停用 1 条</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-label">本月新增</div>
+        <div class="stat-val">4</div>
+        <div class="stat-sub">较上月 ↑ 2</div>
+      </div>
+      <div class="stat-card gray">
+        <div class="stat-label">待补录（用户反馈）</div>
+        <div class="stat-val">1</div>
+        <div class="stat-sub"><span style="color:#C0392B;font-weight:600">▲ 需处理</span></div>
+      </div>
+    </div>
+
+    <!-- 提示条 -->
+    <div class="tip-bar">
+      <span>⚠️</span>
+      <span>有 <b>1 条用户反馈</b>：用户「张三 / 兴业银行」无法选择证书，其 UKey CSP 名称未在名单中。请查询后补录。
+      <a href="#" style="color:#2E5FA3;margin-left:8px;font-weight:600">查看详情 →</a></span>
+    </div>
+
+    <!-- 工具栏 -->
+    <div class="toolbar">
+      <div class="search-box">
+        <span style="color:#B0B8C4">🔍</span>
+        <input type="text" placeholder="搜索 CSP 名称、UKey 品牌…" id="searchInput" oninput="filterRows()">
+      </div>
+      <select class="select-filter" id="bankFilter" onchange="filterRows()">
+        <option value="">全部银行</option>
+        <option value="兴业银行">兴业银行</option>
+        <option value="中国银行">中国银行</option>
+        <option value="招商银行">招商银行</option>
+      </select>
+      <select class="select-filter" id="statusFilter" onchange="filterRows()">
+        <option value="">全部状态</option>
+        <option value="启用">启用</option>
+        <option value="停用">停用</option>
+      </select>
+      <div class="toolbar-right">
+        <button class="btn btn-default btn-sm">📤 导出</button>
+      </div>
+    </div>
+
+    <!-- ══ 银行分组 ══ -->
+
+    <!-- 兴业银行 -->
+    <div class="bank-group" id="group-cib">
+      <div class="bank-header" onclick="toggleGroup('cib')">
+        <div class="bank-header-left">
+          <div class="bank-badge" style="background:#FEF3CD">🏦</div>
+          <div>
+            <div class="bank-name">兴业银行</div>
+            <div class="bank-meta">二代UKey · 国密SM2 · 代码：CIB</div>
+          </div>
+        </div>
+        <div class="bank-header-right">
+          <span class="count-badge warn">⚠ 待补录 1</span>
+          <span class="count-badge">5 条 CSP</span>
+          <span class="expand-arrow open" id="arrow-cib">▼</span>
+        </div>
+      </div>
+      <div class="collapse-body" id="body-cib" style="max-height:600px">
+        <table class="csp-table" id="table-cib">
+          <thead>
+            <tr>
+              <th style="width:40px">序号</th>
+              <th>CSP 名称（Windows注册名）</th>
+              <th style="width:120px">UKey 品牌</th>
+              <th style="width:80px">状态</th>
+              <th style="width:110px">最后更新</th>
+              <th style="width:130px">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-bank="兴业银行" data-status="启用">
+              <td style="color:#B0B8C4;text-align:center">1</td>
+              <td><div class="csp-name-cell"><span class="csp-code" title="Rongan KeyPod CSP CIB ENT V2.0">Rongan KeyPod CSP CIB ENT V2.0</span><button class="copy-btn" onclick="copyText('Rongan KeyPod CSP CIB ENT V2.0')">⎘</button></div></td>
+              <td><span class="ukey-brand">融安</span></td>
+              <td><span class="status-tag tag-on">启用</span></td>
+              <td style="color:#7F8C8D;font-size:11.5px">2026-02-10</td>
+              <td><div class="action-cell"><button class="link-btn" onclick="showEdit('Rongan KeyPod CSP CIB ENT V2.0','兴业银行','融安')">编辑</button><div class="divider-v"></div><button class="link-btn" onclick="toggleStatus(this)">停用</button><div class="divider-v"></div><button class="link-btn red" onclick="showConfirmDelete()">删除</button></div></td>
+            </tr>
+            <tr data-bank="兴业银行" data-status="启用">
+              <td style="color:#B0B8C4;text-align:center">2</td>
+              <td><div class="csp-name-cell"><span class="csp-code" title="FEITIAN InterPass3000 CSP For CIB V1.0">FEITIAN InterPass3000 CSP For CIB V1.0</span><button class="copy-btn" onclick="copyText('FEITIAN InterPass3000 CSP For CIB V1.0')">⎘</button></div></td>
+              <td><span class="ukey-brand">飞天诚信</span></td>
+              <td><span class="status-tag tag-on">启用</span></td>
+              <td style="color:#7F8C8D;font-size:11.5px">2026-02-10</td>
+              <td><div class="action-cell"><button class="link-btn" onclick="showEdit('FEITIAN InterPass3000 CSP For CIB V1.0','兴业银行','飞天诚信')">编辑</button><div class="divider-v"></div><button class="link-btn" onclick="toggleStatus(this)">停用</button><div class="divider-v"></div><button class="link-btn red" onclick="showConfirmDelete()">删除</button></div></td>
+            </tr>
+            <tr data-bank="兴业银行" data-status="启用">
+              <td style="color:#B0B8C4;text-align:center">3</td>
+              <td><div class="csp-name-cell"><span class="csp-code">EnterSafe RSA Cryptographic Service Provider For CIB</span><button class="copy-btn" onclick="copyText('EnterSafe RSA Cryptographic Service Provider For CIB')">⎘</button></div></td>
+              <td><span class="ukey-brand">握奥</span></td>
+              <td><span class="status-tag tag-on">启用</span></td>
+              <td style="color:#7F8C8D;font-size:11.5px">2026-02-10</td>
+              <td><div class="action-cell"><button class="link-btn" onclick="showEdit('EnterSafe RSA Cryptographic Service Provider For CIB','兴业银行','握奥')">编辑</button><div class="divider-v"></div><button class="link-btn" onclick="toggleStatus(this)">停用</button><div class="divider-v"></div><button class="link-btn red" onclick="showConfirmDelete()">删除</button></div></td>
+            </tr>
+            <tr data-bank="兴业银行" data-status="启用">
+              <td style="color:#B0B8C4;text-align:center">4</td>
+              <td><div class="csp-name-cell"><span class="csp-code">Watchdata CIB CSP</span><button class="copy-btn" onclick="copyText('Watchdata CIB CSP')">⎘</button></div></td>
+              <td><span class="ukey-brand">握奥威</span></td>
+              <td><span class="status-tag tag-on">启用</span></td>
+              <td style="color:#7F8C8D;font-size:11.5px">2026-02-10</td>
+              <td><div class="action-cell"><button class="link-btn" onclick="showEdit('Watchdata CIB CSP','兴业银行','握奥威')">编辑</button><div class="divider-v"></div><button class="link-btn" onclick="toggleStatus(this)">停用</button><div class="divider-v"></div><button class="link-btn red" onclick="showConfirmDelete()">删除</button></div></td>
+            </tr>
+            <tr data-bank="兴业银行" data-status="停用">
+              <td style="color:#B0B8C4;text-align:center">5</td>
+              <td><div class="csp-name-cell"><span class="csp-code" style="color:#B0B8C4">Tendyron OnKey193 CSP CIB v1.0</span><button class="copy-btn" onclick="copyText('Tendyron OnKey193 CSP CIB v1.0')">⎘</button></div></td>
+              <td><span class="ukey-brand" style="opacity:.5">天喻</span></td>
+              <td><span class="status-tag tag-off">停用</span></td>
+              <td style="color:#B0B8C4;font-size:11.5px">2025-11-03</td>
+              <td><div class="action-cell"><button class="link-btn" onclick="showEdit('Tendyron OnKey193 CSP CIB v1.0','兴业银行','天喻')">编辑</button><div class="divider-v"></div><button class="link-btn" onclick="toggleStatus(this)" style="color:#27AE60">启用</button><div class="divider-v"></div><button class="link-btn red" onclick="showConfirmDelete()">删除</button></div></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="add-row-bar">
+          <button onclick="showAddModal('兴业银行')">＋ 为兴业银行补录 CSP</button>
+          <span style="color:#B0B8C4;font-size:11px">（用户反馈无法选择证书时，在此补录新的驱动名称）</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 中国银行 -->
+    <div class="bank-group" id="group-boc">
+      <div class="bank-header" onclick="toggleGroup('boc')">
+        <div class="bank-header-left">
+          <div class="bank-badge" style="background:#D6EAF8">🏦</div>
+          <div>
+            <div class="bank-name">中国银行</div>
+            <div class="bank-meta">二代兼容UKey · 国密+国际双算法 · 代码：BOC</div>
+          </div>
+        </div>
+        <div class="bank-header-right">
+          <span class="count-badge">4 条 CSP</span>
+          <span class="expand-arrow open" id="arrow-boc">▼</span>
+        </div>
+      </div>
+      <div class="collapse-body" id="body-boc" style="max-height:600px">
+        <table class="csp-table" id="table-boc">
+          <thead>
+            <tr>
+              <th style="width:40px">序号</th>
+              <th>CSP 名称（Windows注册名）</th>
+              <th style="width:120px">UKey 品牌</th>
+              <th style="width:80px">状态</th>
+              <th style="width:110px">最后更新</th>
+              <th style="width:130px">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-bank="中国银行" data-status="启用">
+              <td style="color:#B0B8C4;text-align:center">1</td>
+              <td><div class="csp-name-cell"><span class="csp-code">CFCA CSP v4.0</span><button class="copy-btn" onclick="copyText('CFCA CSP v4.0')">⎘</button></div></td>
+              <td><span class="ukey-brand">CFCA</span></td>
+              <td><span class="status-tag tag-on">启用</span></td>
+              <td style="color:#7F8C8D;font-size:11.5px">2026-01-15</td>
+              <td><div class="action-cell"><button class="link-btn" onclick="showEdit('CFCA CSP v4.0','中国银行','CFCA')">编辑</button><div class="divider-v"></div><button class="link-btn" onclick="toggleStatus(this)">停用</button><div class="divider-v"></div><button class="link-btn red" onclick="showConfirmDelete()">删除</button></div></td>
+            </tr>
+            <tr data-bank="中国银行" data-status="启用">
+              <td style="color:#B0B8C4;text-align:center">2</td>
+              <td><div class="csp-name-cell"><span class="csp-code">CFCA Ulan CSP v4.0</span><button class="copy-btn" onclick="copyText('CFCA Ulan CSP v4.0')">⎘</button></div></td>
+              <td><span class="ukey-brand">CFCA</span></td>
+              <td><span class="status-tag tag-on">启用</span></td>
+              <td style="color:#7F8C8D;font-size:11.5px">2026-01-15</td>
+              <td><div class="action-cell"><button class="link-btn" onclick="showEdit('CFCA Ulan CSP v4.0','中国银行','CFCA')">编辑</button><div class="divider-v"></div><button class="link-btn" onclick="toggleStatus(this)">停用</button><div class="divider-v"></div><button class="link-btn red" onclick="showConfirmDelete()">删除</button></div></td>
+            </tr>
+            <tr data-bank="中国银行" data-status="启用">
+              <td style="color:#B0B8C4;text-align:center">3</td>
+              <td><div class="csp-name-cell"><span class="csp-code">CFCA FOR UKEY CSP v1.1.0</span><button class="copy-btn" onclick="copyText('CFCA FOR UKEY CSP v1.1.0')">⎘</button></div></td>
+              <td><span class="ukey-brand">CFCA</span></td>
+              <td><span class="status-tag tag-on">启用</span></td>
+              <td style="color:#7F8C8D;font-size:11.5px">2026-01-15</td>
+              <td><div class="action-cell"><button class="link-btn" onclick="showEdit('CFCA FOR UKEY CSP v1.1.0','中国银行','CFCA')">编辑</button><div class="divider-v"></div><button class="link-btn" onclick="toggleStatus(this)">停用</button><div class="divider-v"></div><button class="link-btn red" onclick="showConfirmDelete()">删除</button></div></td>
+            </tr>
+            <tr data-bank="中国银行" data-status="启用">
+              <td style="color:#B0B8C4;text-align:center">4</td>
+              <td><div class="csp-name-cell"><span class="csp-code">HengBao UranuSafe CSP V5.0 For BOC</span><button class="copy-btn" onclick="copyText('HengBao UranuSafe CSP V5.0 For BOC')">⎘</button></div></td>
+              <td><span class="ukey-brand">恒宝</span></td>
+              <td><span class="status-tag tag-on">启用</span></td>
+              <td style="color:#7F8C8D;font-size:11.5px">2026-01-15</td>
+              <td><div class="action-cell"><button class="link-btn" onclick="showEdit('HengBao UranuSafe CSP V5.0 For BOC','中国银行','恒宝')">编辑</button><div class="divider-v"></div><button class="link-btn" onclick="toggleStatus(this)">停用</button><div class="divider-v"></div><button class="link-btn red" onclick="showConfirmDelete()">删除</button></div></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="add-row-bar">
+          <button onclick="showAddModal('中国银行')">＋ 为中国银行补录 CSP</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 招商银行（空状态示例）-->
+    <div class="bank-group" id="group-cmb">
+      <div class="bank-header" onclick="toggleGroup('cmb')">
+        <div class="bank-header-left">
+          <div class="bank-badge" style="background:#FADBD8">🏦</div>
+          <div>
+            <div class="bank-name">招商银行</div>
+            <div class="bank-meta">二代UKey · 国密SM2 · 代码：CMB · <span style="color:#C0392B;font-size:10px;font-weight:600">⚠ 暂无CSP配置</span></div>
+          </div>
+        </div>
+        <div class="bank-header-right">
+          <span class="count-badge" style="background:#FADBD8;color:#C0392B">0 条 CSP</span>
+          <span class="expand-arrow open" id="arrow-cmb">▼</span>
+        </div>
+      </div>
+      <div class="collapse-body" id="body-cmb" style="max-height:200px">
+        <div class="empty-tip">
+          <div style="font-size:28px;margin-bottom:8px">🗂</div>
+          暂无 CSP 配置，请联系招商银行获取 UKey 驱动名称后录入
+          <div style="margin-top:12px"><button class="btn btn-primary btn-sm" onclick="showAddModal('招商银行')">＋ 立即录入</button></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+
+<!-- ══ 新增/编辑 Modal ══ -->
+<div class="modal-mask" id="addModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle">新增 CSP 配置</h3>
+      <button class="modal-close" onclick="closeModal('addModal')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="form-row">
+        <div class="form-label">所属银行 <span class="req">*</span></div>
+        <select class="form-select" id="formBank">
+          <option value="">请选择银行</option>
+          <option value="兴业银行">兴业银行</option>
+          <option value="中国银行">中国银行</option>
+          <option value="招商银行">招商银行</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">UKey 品牌 / 型号 <span class="req">*</span> <span class="tip">（填写 UKey 外壳或包装上的品牌名）</span></div>
+        <input class="form-input" type="text" id="formBrand" placeholder="如：飞天诚信 / 握奥 / 恒宝 / CFCA">
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">CSP 名称 <span class="req">*</span> <span class="tip">（粘贴 Windows 注册的驱动名称，注意大小写和空格）</span></div>
+        <input class="form-input" type="text" id="formCsp" placeholder="如：FEITIAN InterPass3000 CSP For CIB V1.0" style="font-family:'Courier New',monospace;font-size:12px">
+        <div class="form-hint">
+          可通过以下命令在用户电脑上查询：<br>
+          <code>certutil -csplist</code>（在 cmd / PowerShell 中运行，选择非微软提供的程序名称）
+        </div>
+      </div>
+
+      <div class="form-row" style="margin-bottom:0">
+        <div class="form-label">备注</div>
+        <input class="form-input" type="text" id="formRemark" placeholder="如：用于处理兴业银行用户张XX反馈的证书无法选择问题">
+      </div>
+
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-default" onclick="closeModal('addModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveCSP()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 删除确认 Modal ══ -->
+<div class="confirm-mask" id="confirmModal">
+  <div class="confirm-box">
+    <h4>⚠️ 确认删除</h4>
+    <p>删除后该 CSP 将从系统中移除，对应银行的用户可能无法完成签章。<br>如仅想临时下线，建议使用<b>「停用」</b>而非删除。</p>
+    <div class="row">
+      <button class="btn btn-default btn-sm" onclick="closeModal('confirmModal')">取消，改为停用</button>
+      <button class="btn btn-sm" style="background:#C0392B;color:#fff" onclick="closeModal('confirmModal');showToast('已删除该条 CSP 配置')">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 批量导入 Modal ══ -->
+<div class="modal-mask" id="importModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>批量导入 CSP 配置</h3>
+      <button class="modal-close" onclick="closeModal('importModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="upload-zone" onclick="showToast('请选择 CSV 文件（演示模式）')">
+        <div class="icon">📂</div>
+        <p>点击上传 CSV 文件，或将文件拖拽至此处</p>
+        <p style="font-size:11px;margin-top:4px">格式：银行代码 | UKey品牌 | CSP名称 | 备注</p>
+      </div>
+      <div style="font-size:12px;color:#7F8C8D;line-height:1.8">
+        <b>说明：</b>CSV 第一行为表头，从第二行开始读取数据。系统将自动去重，已存在的 CSP 名称不会重复写入。<br>
+        <a href="#" style="color:#2E5FA3" onclick="showToast('下载模板（演示模式）')">📥 下载导入模板</a>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-default" onclick="closeModal('importModal')">取消</button>
+      <button class="btn btn-primary" onclick="showToast('文件上传成功，已导入 3 条 CSP 配置');closeModal('importModal')">确认导入</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── 折叠展开 ──
+function toggleGroup(id){
+  const body=document.getElementById('body-'+id);
+  const arrow=document.getElementById('arrow-'+id);
+  if(body.style.maxHeight==='0px'||body.style.maxHeight===''){
+    body.style.maxHeight='600px';arrow.classList.add('open');
+  }else{
+    body.style.maxHeight='0px';arrow.classList.remove('open');
+  }
+}
+
+// ── Modal ──
+function showAddModal(bank=''){
+  document.getElementById('modalTitle').textContent='新增 CSP 配置';
+  document.getElementById('formBank').value=bank;
+  document.getElementById('formBrand').value='';
+  document.getElementById('formCsp').value='';
+  document.getElementById('formRemark').value='';
+  document.getElementById('addModal').classList.add('show');
+}
+function showEdit(csp,bank,brand){
+  document.getElementById('modalTitle').textContent='编辑 CSP 配置';
+  document.getElementById('formBank').value=bank;
+  document.getElementById('formBrand').value=brand;
+  document.getElementById('formCsp').value=csp;
+  document.getElementById('formRemark').value='';
+  document.getElementById('addModal').classList.add('show');
+}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+function showConfirmDelete(){document.getElementById('confirmModal').classList.add('show')}
+function showImport(){document.getElementById('importModal').classList.add('show')}
+
+function saveCSP(){
+  const csp=document.getElementById('formCsp').value.trim();
+  const bank=document.getElementById('formBank').value;
+  if(!bank){showToast('请选择所属银行');return}
+  if(!csp){showToast('请填写 CSP 名称');return}
+  closeModal('addModal');
+  showToast('✅ CSP 配置已保存，实时生效');
+}
+
+// ── 状态切换 ──
+function toggleStatus(btn){
+  const td=btn.closest('tr').querySelector('.status-tag');
+  const code=btn.closest('tr').querySelector('.csp-code');
+  if(td.classList.contains('tag-on')){
+    td.className='status-tag tag-off';td.textContent='停用';
+    btn.textContent='启用';btn.style.color='#27AE60';
+    code.style.color='#B0B8C4';showToast('已停用该 CSP 配置');
+  }else{
+    td.className='status-tag tag-on';td.textContent='启用';
+    btn.textContent='停用';btn.style.color='';
+    code.style.color='';showToast('已启用该 CSP 配置');
+  }
+}
+
+// ── 复制 ──
+function copyText(t){
+  navigator.clipboard.writeText(t).then(()=>showToast('✅ 已复制：'+t)).catch(()=>showToast('复制失败，请手动复制'));
+}
+
+// ── 搜索过滤 ──
+function filterRows(){
+  const s=document.getElementById('searchInput').value.toLowerCase();
+  const b=document.getElementById('bankFilter').value;
+  const st=document.getElementById('statusFilter').value;
+  document.querySelectorAll('tbody tr').forEach(tr=>{
+    const bank=tr.dataset.bank||'';
+    const status=tr.dataset.status||'';
+    const text=tr.textContent.toLowerCase();
+    const ok=((!s||text.includes(s))&&(!b||bank===b)&&(!st||status===st));
+    tr.style.display=ok?'':'none';
+  });
+}
+
+// ── Toast ──
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ── 点击遮罩关闭 ──
+document.querySelectorAll('.modal-mask,.confirm-mask').forEach(mask=>{
+  mask.addEventListener('click',e=>{if(e.target===mask)mask.classList.remove('show')});
+});
+</script>
+</body>
+</html>
